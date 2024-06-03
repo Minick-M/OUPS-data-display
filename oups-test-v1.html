@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html>
+<head> <meta charset="UTF-8"> <title>OUPS TEST</title>
+
+<style>
+
+body {
+  font-family: Verdana;
+  font-size: 40px;
+}
+
+.ui {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+}
+
+.ui_connection_button {
+    background: #f8f8f8;
+    font-family: Verdana;
+    font-size: 150%;
+    border: 3px solid black;
+    border-radius: 10px;
+    width: 100%;
+}
+
+.ui_connection_button:hover {
+    background: #f0f0f0;
+}
+
+.ui_message {
+    background: #FFAFAF;
+    font-family: Verdana;
+    font-size: 150%;
+    border-color: transparent;
+    border-radius: 5px;
+    height: 1.3em;
+}
+
+.ui_message[data-state="connecting"] {
+    background: #F4FF7D;
+}
+
+.ui_message[data-state="connected"] {
+    background: #AAFF00;
+}
+
+
+</style>
+
+<script>
+
+// Copyright: Marc Feeley, 2024
+// v1: April 10, 2024
+
+let device_latest_readings = [];
+let readings_to_average = 4;
+
+function get_current_reading() {
+  let reading = [0, 0, 0, 0, 0];
+  for (let i=0; i<device_latest_readings.length; i++) {
+    reading[0] = device_latest_readings[i][0];
+    for (let j=1; j<reading.length; j++) {
+      reading[j] += device_latest_readings[i][j];
+    }
+  }
+  for (let j=1; j<reading.length; j++) {
+    reading[j] = reading[j] / device_latest_readings.length;
+  }
+  return reading;
+}  
+    
+function handle_device_connection() {
+  log('handle_device_connection');
+  device_latest_readings = [];
+}
+
+function handle_device_disconnection() {
+  log('handle_device_disconnection');
+}
+
+function handle_device_notification(timestamp, force, ax, ay, az) {
+//  log('handle_device_notification ' + timestamp + ' ' + force + ' ' + ax + ' ' + ay + ' ' + az);
+  let reading = [timestamp, force, ax, ay, az];
+  device_latest_readings.push(reading);
+  while (device_latest_readings.length > readings_to_average) device_latest_readings.shift();
+  reading = get_current_reading();
+  ui_reading_set(reading);
+}
+
+let trace_packets = false;
+let trace_readings = false;
+
+function log(msg) {
+  console.log(msg);
+}
+
+let device_name_prefix = 'Oups!';
+
+let OUPS_service_id         = '0000ffe0-0000-1000-8000-00805f9b34fb';
+let force_characteristic_id = '0000ffe2-0000-1000-8000-00805f9b34fb';
+let IMU_characteristic_id   = '0000ffe3-0000-1000-8000-00805f9b34fb';
+
+let bluetooth_device     = null;
+let force_characteristic = null;
+let IMU_characteristic   = null;
+
+let latest_force = null;
+
+async function request_device() {
+
+  log('*** Requesting device');
+
+  bluetooth_device = await navigator.bluetooth.requestDevice({
+    filters: [{namePrefix: device_name_prefix}],
+    optionalServices: [OUPS_service_id]});
+
+  bluetooth_device.addEventListener('gattserverdisconnected', on_disconnected);
+}
+
+async function on_disconnected() {
+
+  log('*** Device disconnected');
+
+  ui_state_set('disconnected');
+  handle_device_disconnection();
+
+  force_characteristic.removeEventListener('characteristicvaluechanged',
+    handle_force_value_changed);
+  force_characteristic = null;
+
+  IMU_characteristic.removeEventListener('characteristicvaluechanged',
+    handle_IMU_value_changed);
+  IMU_characteristic = null;
+
+  bluetooth_device = null;
+}
+
+async function disconnect_device() {
+
+  log('*** Disconnecting device');
+
+  if (bluetooth_device === null || !bluetooth_device.gatt.connected) return;
+
+  await bluetooth_device.gatt.disconnect();
+}
+
+async function connect_device() {
+
+  if (!bluetooth_device) {
+    await request_device();
+  }
+
+  if (bluetooth_device.gatt.connected) return;
+
+  //print
+  log('*** Connecting to device');
+
+  ui_state_set('connecting');
+
+  const server = await bluetooth_device.gatt.connect();
+
+  const service = await server.getPrimaryService(OUPS_service_id);
+
+  force_characteristic = await service.getCharacteristic(force_characteristic_id);
+  force_characteristic.addEventListener('characteristicvaluechanged',
+    handle_force_value_changed);
+
+  IMU_characteristic = await service.getCharacteristic(IMU_characteristic_id);
+  IMU_characteristic.addEventListener('characteristicvaluechanged',
+    handle_IMU_value_changed);
+
+  latest_force = null;
+
+  ui_state_set('connected');
+  handle_device_connection();
+
+  await start_notifications();
+}
+
+async function start_notifications() {
+
+  log('*** Starting notifications');
+
+  try {
+    await force_characteristic.startNotifications();
+    await IMU_characteristic.startNotifications();
+  } catch (exc) {
+    log('Error: ' + exc);
+  }
+}
+
+async function handle_force_value_changed(event) {
+
+  const view = event.target.value;
+
+  //debug
+  if (trace_packets) { 
+    let str = 'force packet:';
+    for (let i=0; i<14; i++) {
+      str = str + ' ' + view.getUint8(i);
+    }
+    log(str);
+  }
+
+  let timestamp = view.getUint32(1, true);
+  let force = view.getFloat32(10, true);
+
+  //debug
+  if (trace_readings) {
+    log(timestamp + ' ' + force);
+  }
+
+  latest_force = force;
+}
+
+async function handle_IMU_value_changed(event) {
+
+  const view = event.target.value;
+
+  if (trace_packets) {
+    let str = 'IMU packet:';
+    for (let i=0; i<38; i++) {
+      str = str + ' ' + view.getUint8(i);
+    }
+    log(str);
+  }
+  
+  let timestamp = view.getUint32(1, true);
+//  let temp = view.getFloat32(10, true);
+  let ax = view.getFloat32(14, true);
+  let ay = view.getFloat32(18, true);
+  let az = view.getFloat32(22, true);
+
+  if (trace_readings) {
+    log(timestamp + ' ' + ax + ' ' + ay + ' ' + az);
+  }
+
+  if (latest_force !== null) {
+    handle_device_notification(timestamp, latest_force, ax, ay, az);
+  }
+}
+
+async function ui_setup() {
+  if (!navigator.bluetooth) {
+    let body = document.querySelector('body');
+    if (body) {
+      body.innerHTML = '<center>Désolé...<br><br>Vous devez utiliser un navigateur qui supporte Bluetooth tel que Google Chrome, Edge ou Bluefy sur iOS</center>';
+    }
+  } else {
+    ui_canvas_setup();
+    ui_state_set('disconnected');
+  }
+}
+
+let canvas_width = 800;
+let canvas_height = 1200;
+let canvas_ctx = null;
+let bar_width = 140;
+let bar_height = 1000;
+let max_force = 8;
+
+function ui_canvas_setup() {
+  let canv = document.querySelector('.ui_canvas');
+  if (canv) {
+    canv.width = canvas_width;
+    canv.height = canvas_height;
+
+    var ctx = canv.getContext('2d', { willReadFrequently: true });
+    ctx.mozImageSmoothingEnabled = false;
+    ctx.webkitImageSmoothingEnabled = false;
+    ctx.msImageSmoothingEnabled = false;
+    ctx.imageSmoothingEnabled = false;
+    ctx.font = '48px Courier';
+    canvas_ctx = ctx;
+
+    ui_reading_set([0, max_force/2, 0, 0, 0]);
+  }
+}
+
+function ui_canvas_rect(x, y, w, h, color) {
+  canvas_ctx.fillStyle = color;
+  canvas_ctx.fillRect(x, y, w, h);
+}
+
+function ui_canvas_text(x, y, text, color) {
+  canvas_ctx.fillStyle = color;
+  canvas_ctx.fillText(text, x, y);
+}
+
+function ui_canvas_clear() {
+  ui_canvas_rect(0, 0, canvas_width, canvas_height, '#ffffff');
+}
+
+// Fonction à changer
+function ui_reading_set(r) {
+  ui_canvas_clear();
+  ui_bar_set(0, r[1], 0, max_force, '#aa0000', '#ffafaf');
+  ui_bar_set(1, r[2], 1.25, 2.5, '#aaaa00', '#ffff00');
+  ui_bar_set(2, r[3], 1.25, 2.5, '#aaaa00', '#ffff00');
+  ui_bar_set(3, r[4], 1.25, 2.5, '#aaaa00', '#ffff00');
+}
+
+let last_max = [0, 0, 0, 0]
+let last_max_time = [0, 0, 0, 0]
+
+function val_to_text(val) {
+  let n = Math.round(100 * Math.abs(val));
+  return ((val<0) ? '-' : '+') + Math.floor(n / 100) + '.' + Math.floor(n / 10) % 10 + Math.floor(n) % 10;
+}
+
+function ui_bar_set(i, val, offset, max, color, color_max) {
+  let now = Date.now();
+  if (((val<0) ? (val < last_max[i]) : (val > last_max[i])) ||
+      (now > last_max_time[i]+1000) ||
+      (i > 0)) {
+    last_max[i] = val;
+    last_max_time[i] = now;
+  }
+  let x = i * 1.5 * bar_width;
+  let v1 = bar_height * Math.min(val+offset, max) / max;
+  let v2 = bar_height * Math.min(last_max[i]+offset, max) / max;
+  let b = (canvas_height - bar_height) / 2;
+  ui_canvas_rect(x, b+bar_height-v1, bar_width, v1, color);
+  ui_canvas_rect(x, b+bar_height-v2, bar_width, v2-v1, color_max);
+  ui_canvas_rect(x, b, bar_width, bar_height-v2, '#fcfcfc');
+  ui_canvas_text(x, b+bar_height-v1, val_to_text(val), '#000000');
+  ui_canvas_text(x, b+bar_height-v2, val_to_text(last_max[i]), '#000000');
+}
+
+function ui_state_set(state) {
+  let but = document.querySelector('.ui_connection_button');
+  let msg = document.querySelector('.ui_message');
+  if (but && msg) {
+    but.setAttribute('data-state', state);
+    msg.setAttribute('data-state', state);
+    if (state === 'connecting') {
+      msg.innerText = 'Un moment SVP...';
+      but.innerText = 'Un moment SVP...';
+      but.disabled = true;
+      but.style.display = 'none';
+    } else {
+      msg.innerText = (state === 'connected') ? 'Connecté' : 'Déconnecté !!';
+      but.innerText = (state === 'connected') ? '>>> Déconnecter <<<' : '>>> Connecter <<<';
+      but.disabled = false;
+      but.style.display = 'inline';
+    }
+  }
+}
+
+async function ui_connection_button_click() {
+  if (bluetooth_device === null) {
+    await connect_device();
+  } else {
+    await disconnect_device();
+  }
+}
+
+</script>
+</head>
+
+<body onload="ui_setup()">
+
+<div class="ui">
+  <div>OUPS! TEST v1</div>
+  <canvas class="ui_canvas"></canvas>
+  <div class="ui_message"></div>
+  <br>
+  <button class="ui_connection_button" onclick="ui_connection_button_click()"></button>
+</div>
+
+</body>
+
+</html>
