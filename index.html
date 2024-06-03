@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Force Matching Game</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body onload="ui_setup()">
+  <div class="game-container">
+    <div class="header">
+      <h1>Force Matching Game</h1>
+      <button class="ui_connection_button" onclick="ui_connection_button_click()">Connect Device</button>
+      <div class="ui_message">Disconnected !!</div>
+    </div>
+    <div class="game-display">
+      <div class="force-model">
+        <div class="force-level" id="model-force-level">0</div>
+      </div>
+      <div class="force-user">
+        <div class="force-level" id="user-force-level">0</div>
+      </div>
+    </div>
+    <div class="footer">
+      <button class="start-button" onclick="startGame()">Start Game</button>
+    </div>
+  </div>
+  <canvas class="ui_canvas"></canvas>
+</body>
+</html>
