@@ -2,15 +2,38 @@
 <html>
 <body>
 
+<div class="ui">
+    <div class="ui_message"></div>
+    <br />
+    <button class="ui_connection_button" onclick="ui_connection_button_click()"></button>
+</div>
+
+<script src="hardware.js"> </script>
+
 <script>
-    // Copyright © Francois Vaillancourt 2024
     //Screens dimensions
     const screenWidth = 700;
     const screenHeight = 325;
+    const marginLeft = screenWidth*0.1;
+    const marginRight = 0;
+    const marginUp = screenHeight*0.1;
+    const marginDown = screenHeight*0.1;
+
+    //GamePlay constants
+    const gameplayHeight = screenHeight - (marginUp + marginDown);
+    const gameplayWidth = screenWidth - (marginLeft + marginRight);
+    const gameplayTimeView = 10000; //in millisecs
+    const timeCursor = gameplayTimeView*0.3;
+    const currentTimeX = marginLeft + (timeCursor/gameplayTimeView)*gameplayWidth;
+    const forceTolerance = 0.5; //how much force variation is tolerated
+    const maxForce = 8; //***Ne sera peut-être pas une constante
+    const minForce = 1; //***Doit être updaté en fonction du vagin
+    const sequenceDuration = 3000; //***Doit etre changer dynamiquement
 
     //Colors
     const white = '#FFFFFF';
     const mediumGray = '#9A9AA2';
+    const lightGray = '#d3d3d3'; //***A changer
     const darkGreen = '99b8b0';
     const lightGreen = '#C4E1DA';
     const lightPink = '#FFDEDA';
@@ -18,10 +41,19 @@
     const brightPink = '#FD66A0';
     const backgroundColor = white;
 
-    //Strokes thickness ??
+    //Images
+    const yellowFlower = new Image();
+    yellowFlower.src = 'yellowFlower.png'; 
+    yellowFlower.onload = function() {
+    };
+    yellowFlower.onerror = function() {
+        console.error('L\'image n\'a pas pu être chargée.'); // Gérer les erreurs de chargement de l'image
+    };
 
-    //Strenght position (that need to varie depending on contraction)
-    var heightStrenght = 2 ; // TO BE CHANGED 
+    //Patient individual datas
+    var baselineForce = 0; //***a changer
+    var patientMaxForce = 4; //***a changer   
+
     
     var canvas = '<canvas id="myCanvas" width="'+ screenWidth+'" height="'+ screenHeight+'" style="border:2px solid #d3d3d3;">'
         document.write(canvas);
@@ -33,6 +65,15 @@
     var cercleRatio = 0;
     var cercleX = -95; //a changer pr etre dynamique
 
+    var reading_pressure = 0.0;
+
+    function forceToPixel(force){
+        return (screenHeight-marginDown) - (((force-minForce)/(maxForce-minForce))*gameplayHeight);
+    }
+
+    function timeToPixel(time){
+        return (time/gameplayTimeView)*gameplayWidth;
+    }
 
     function clear(){
         ctx.fillStyle = backgroundColor;
@@ -44,41 +85,32 @@
         let deltaMs = timeStamp-lastTimeStamp;
         lastTimeStamp = timeStamp;
 
+        reading_pressure = get_current_reading()[forceIndex];
+
         //Drawing to left side scale
-        var marginWidth = screenWidth/10
-        var marginHeight = screenHeight/10
-        var lenghtScale = screenHeight - (marginHeight*2);
-        drawScale(marginWidth, marginHeight, lenghtScale, 5, mediumGray, 2)
+        drawScale(marginLeft, marginUp, gameplayHeight, 5, mediumGray, 2)
        
         //drawing of vertical dotted lines of the cursor
-        var distFromScale = marginWidth*4
-        var lenghtLine = screenHeight - (marginHeight*2);
-        drawDottedLine(distFromScale, marginHeight, lenghtLine, 1, lightGreen, 1.5)
+        drawDottedLine(currentTimeX, marginUp, gameplayHeight, 1, lightGreen, 1)
     
+        let forceRatio = (reading_pressure - minForce) / (maxForce - minForce);
+        let clampedForceRatio = Math.min(Math.max(forceRatio, 0), 1);
+        let forceY = marginUp + gameplayHeight * (1.0 - clampedForceRatio);
+
         //drawing of horizontal dotted lines of the cursor
-        var lenghtLine = distFromScale - (marginWidth-20);
-        drawDottedLine(marginWidth-20, screenHeight/2 -10, lenghtLine, 0, lightGreen, 1.5)
+        drawDottedLine(marginLeft-20, forceY, gameplayWidth, 0, lightGreen, 1)
         
         //drawing of the flower cursor
-        // Créer un nouvel élément image
-        const img = new Image();
+        ctx.drawImage(yellowFlower, currentTimeX-yellowFlower.width, forceY-yellowFlower.height, 25, 26); 
 
-        // Définir la source de l'image en utilisant un chemin relatif
-        img.src = 'yellowFlower.jpg'; // Assurez-vous que le nom de fichier et l'extension sont corrects
-
-        // Attendre que l'image soit chargée avant de la dessiner sur le canvas
-        img.onload = function() {
-            // Dessiner l'image sur le canvas
-            ctx.drawImage(img, 50, 50); // (x, y) est la position de l'image sur le canvas
-            // ctx.drawImage(img, 50, 50, 200, 150); // Pour redimensionner l'image
-        };
-
-        // Gérer les erreurs de chargement de l'image
-        img.onerror = function() {
-            console.error('L\'image n\'a pas pu être chargée.');
-        };
+        //drawing rectangle
+        let rectWidth = ((sequenceDuration/gameplayTimeView)*gameplayWidth);
+        let rectHeight = (forceTolerance/(maxForce-minForce)*gameplayHeight);
+        let rectY = forceToPixel(patientMaxForce) - rectHeight/2;
+        drawRectangles(currentTimeX, rectY, rectWidth, rectHeight, lightGray)
 
         //drawing outer circle
+        /*
         ctx.lineWidth = 15;
         ctx.beginPath();
         ctx.lineCap = "butt";
@@ -106,21 +138,27 @@
         if (cercleX >= screenWidth + 95){
             cercleX = -95
         }
+        */
     }
 
     window.requestAnimationFrame(gameLoop);
 
-    function drawRectangles(x, y, height, width, color){
-
+    function drawRectangles(x, y, width, height, color){
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.roundRect(x, y, width, height, [40]);
+        ctx.fill();
+        ctx.stroke();
     }
 
-    function drawScale(x, y, lenght, numScales, color, thickness){
+    function drawScale(x, y, height, numScales, color, thickness){
         //vertical bar
         ctx.beginPath();
         ctx.strokeStyle = color; 
         ctx.lineWidth = thickness;
         ctx.moveTo(x, y);
-        ctx.lineTo(x, y + lenght);
+        ctx.lineTo(x, y + height);
         ctx.stroke();
 
         //horizontal bars
@@ -128,53 +166,55 @@
         ctx.strokeStyle = color;
         ctx.lineWidth = thickness/2;
 
-        var scaleRation =  lenght/(numScales-1)
+        var scaleRatio =  height/(numScales-1)
 
         for (let i = 0; i < numScales; i++) {
 
             if (i==0 || i==numScales-1){
-                var positionScale = i*scaleRation
+                var positionScale = i*scaleRatio
                 ctx.moveTo(x - 6, y + positionScale);
                 ctx.lineTo(x + 6, y + positionScale);
                 ctx.stroke();
             }
-            var positionScale = i*scaleRation
-            ctx.moveTo(x - 6, y + positionScale);
-            ctx.lineTo(x, y + positionScale);
-            ctx.stroke();
+            else{
+                var positionScale = i*scaleRatio
+                ctx.moveTo(x - 6, y + positionScale);
+                ctx.lineTo(x, y + positionScale);
+                ctx.stroke();
+            }
         }
     
     }
 
-    function drawDottedLine(x, y, lenght, orientation, color, thickness){
+    function drawDottedLine(x, y, length, isVertical, color, thickness){
         const segmentLength = 10;
-        const gapSegments = 5;
+        const gapLength = 5;
 
         // Vertical line
-        if (orientation){
+        if (isVertical){
             var i = y;
-            while (i < y + lenght) {
+            
+            while (i < y + length) {
+                ctx.beginPath();
                 ctx.lineWidth = thickness;
                 ctx.strokeStyle = color;
-                ctx.beginPath();
                 ctx.moveTo(x, i);
                 ctx.lineTo(x, i + segmentLength);
                 ctx.stroke();
-                i += segmentLength + gapSegments;
+                i += segmentLength + gapLength;
             } 
         }
         // horizontal line
-        else if (!orientation) {
+        else if (!isVertical) {
             var i = x;
-            var count = 0
-            while (i < x + lenght) {
+            while (i < x + length) {
+                ctx.beginPath();
                 ctx.lineWidth = thickness;
                 ctx.strokeStyle = color;
-                ctx.beginPath();
                 ctx.moveTo(i, y);
                 ctx.lineTo(i + segmentLength, y);
                 ctx.stroke();
-                i += segmentLength + gapSegments;
+                i += segmentLength + gapLength;
             }
         }
         

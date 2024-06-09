@@ -46,3 +46,39 @@ canvas {
     height: 100%; /* Adjust height as needed */
 
 }
+
+.ui {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+}
+
+.ui_connection_button {
+    background: #f8f8f8;
+    font-family: Verdana;
+    font-size: 150%;
+    border: 3px solid black;
+    border-radius: 10px;
+    width: 100%;
+}
+
+.ui_connection_button:hover {
+    background: #f0f0f0;
+}
+
+.ui_message {
+    background: #FFAFAF;
+    font-family: Verdana;
+    font-size: 150%;
+    border-color: transparent;
+    border-radius: 5px;
+    height: 1.3em;
+}
+
+.ui_message[data-state="connecting"] {
+    background: #F4FF7D;
+}
+
+.ui_message[data-state="connected"] {
+    background: #AAFF00;
+}
