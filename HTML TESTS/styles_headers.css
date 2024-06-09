@@ -1,0 +1,48 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #ffffff;
+    color: #333;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+header {
+    float: left;
+    text-align: left;
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding: 20px;
+}
+
+.h2 {
+    font-size: 32px;
+    color: #FD66A0; /* Pink color */
+    font-weight: lighter;
+    font-family: 'Quicksand';
+    margin-top: 0;
+    margin-bottom: 0;
+    letter-spacing: -2%;
+}
+
+.h3 {
+    font-size: 32px;
+    color: #1C1C1C; /* Dark gray color */
+    font-family: 'Quicksand';
+    font-weight: lighter;
+    margin-top: 0%;
+    margin-bottom: 0%;
+    letter-spacing: -2%;
+}
+
+canvas {
+    position: relative;
+    border: 2px solid #000; /* Added black border */
+    width: 100%; /* Adjust width as needed */
+    height: 100%; /* Adjust height as needed */
+
+}

@@ -1,0 +1,39 @@
+
+// horizontal drawing
+let x = ratioWidth * 2;
+while (x < screenWidth - ratioWidth) {
+    ctx.beginPath();
+    ctx.moveTo(x, ratioHeight * 2);
+    ctx.lineTo(x + segmentLength, ratioHeight * 2);
+    ctx.stroke();
+    x += segmentLength + gapLength;
+}
+
+//drawing cercles
+ctx.lineWidth = 5; // Set the stroke width to 5
+ctx.beginPath();
+ctx.strokeStyle = '#FF000044'; // Red color for the stroke
+ctx.arc(screenWidth / 3.0,screenHeight / 2,90,0,2*Math.PI);
+ctx.stroke();
+
+ctx.beginPath();
+ctx.strokeStyle = '#0000FF44'; // Red color for the stroke
+ctx.arc(screenWidth * 0.66,screenHeight / 2,90,0,2*Math.PI);
+ctx.stroke();
+
+
+//drawing of green dotted lines of the cursor
+    const segmentLength = 10;
+    const gapSegments = 5;
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = lightGreen;
+
+    // vertical drawing
+    let y = ratioHeight;
+    ctx.beginPath();
+    while (y < screenHeight - ratioHeight) {
+        ctx.moveTo(ratioWidth * 2, y);
+        ctx.lineTo(ratioWidth * 2, y + segmentLength);
+        ctx.stroke();
+        y += segmentLength + gapLength;
+    }

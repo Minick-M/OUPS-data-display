@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<script>
+    // Copyright © Francois Vaillancourt 2024
+    //Screens dimensions
+    const screenWidth = 700;
+    const screenHeight = 325;
+
+    //Colors
+    const white = '#FFFFFF';
+    const mediumGray = '#9A9AA2';
+    const darkGreen = '99b8b0';
+    const lightGreen = '#C4E1DA';
+    const lightPink = '#FFDEDA';
+    const lightYellow = '#FCEA81';
+    const brightPink = '#FD66A0';
+    const backgroundColor = white;
+
+    //Strokes thickness ??
+
+    //Strenght position (that need to varie depending on contraction)
+    var heightStrenght = 2 ; // TO BE CHANGED 
+    
+    var canvas = '<canvas id="myCanvas" width="'+ screenWidth+'" height="'+ screenHeight+'" style="border:2px solid #d3d3d3;">'
+        document.write(canvas);
+    
+    var c = document.getElementById("myCanvas");
+    var ctx = c.getContext("2d");
+    var lastTimeStamp = 0;
+    
+    var cercleRatio = 0;
+    var cercleX = -95; //a changer pr etre dynamique
+
+
+    function clear(){
+        ctx.fillStyle = backgroundColor;
+        ctx.fillRect(0, 0, screenWidth, screenHeight);
+    }
+    function gameLoop(timeStamp){
+        window.requestAnimationFrame(gameLoop);
+        clear();
+        let deltaMs = timeStamp-lastTimeStamp;
+        lastTimeStamp = timeStamp;
+
+        //Drawing to left side scale
+        var marginWidth = screenWidth/10
+        var marginHeight = screenHeight/10
+        var lenghtScale = screenHeight - (marginHeight*2);
+        drawScale(marginWidth, marginHeight, lenghtScale, 5, mediumGray, 2)
+       
+        //drawing of vertical dotted lines of the cursor
+        var distFromScale = marginWidth*4
+        var lenghtLine = screenHeight - (marginHeight*2);
+        drawDottedLine(distFromScale, marginHeight, lenghtLine, 1, lightGreen, 1.5)
+    
+        //drawing of horizontal dotted lines of the cursor
+        var lenghtLine = distFromScale - (marginWidth-20);
+        drawDottedLine(marginWidth-20, screenHeight/2 -10, lenghtLine, 0, lightGreen, 1.5)
+        
+        //drawing of the flower cursor
+        // Créer un nouvel élément image
+        const img = new Image();
+
+        // Définir la source de l'image en utilisant un chemin relatif
+        img.src = 'yellowFlower.jpg'; // Assurez-vous que le nom de fichier et l'extension sont corrects
+
+        // Attendre que l'image soit chargée avant de la dessiner sur le canvas
+        img.onload = function() {
+            // Dessiner l'image sur le canvas
+            ctx.drawImage(img, 50, 50); // (x, y) est la position de l'image sur le canvas
+            // ctx.drawImage(img, 50, 50, 200, 150); // Pour redimensionner l'image
+        };
+
+        // Gérer les erreurs de chargement de l'image
+        img.onerror = function() {
+            console.error('L\'image n\'a pas pu être chargée.');
+        };
+
+        //drawing outer circle
+        ctx.lineWidth = 15;
+        ctx.beginPath();
+        ctx.lineCap = "butt";
+        ctx.strokeStyle = brightPink;
+        ctx.arc(cercleX,screenHeight / 2,90,0,2*Math.PI);
+        ctx.stroke();
+        
+        // Advancing inner circle
+        cercleRatio += deltaMs / 10000;
+        if(cercleRatio > 1.0)
+        {
+            cercleRatio = 0;
+        }
+
+        //drawing inner circle
+        ctx.beginPath();
+        ctx.lineWidth = 8;
+        ctx.strokeStyle = lightPink;
+        ctx.lineCap = "round";
+        ctx.arc(cercleX,screenHeight / 2,90,0,2*Math.PI*cercleRatio);
+        ctx.stroke();
+
+        // Moving circle with wrap around
+        cercleX += (screenWidth/5000)*deltaMs;
+        if (cercleX >= screenWidth + 95){
+            cercleX = -95
+        }
+    }
+
+    window.requestAnimationFrame(gameLoop);
+
+    function drawRectangles(x, y, height, width, color){
+
+    }
+
+    function drawScale(x, y, lenght, numScales, color, thickness){
+        //vertical bar
+        ctx.beginPath();
+        ctx.strokeStyle = color; 
+        ctx.lineWidth = thickness;
+        ctx.moveTo(x, y);
+        ctx.lineTo(x, y + lenght);
+        ctx.stroke();
+
+        //horizontal bars
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = thickness/2;
+
+        var scaleRation =  lenght/(numScales-1)
+
+        for (let i = 0; i < numScales; i++) {
+
+            if (i==0 || i==numScales-1){
+                var positionScale = i*scaleRation
+                ctx.moveTo(x - 6, y + positionScale);
+                ctx.lineTo(x + 6, y + positionScale);
+                ctx.stroke();
+            }
+            var positionScale = i*scaleRation
+            ctx.moveTo(x - 6, y + positionScale);
+            ctx.lineTo(x, y + positionScale);
+            ctx.stroke();
+        }
+    
+    }
+
+    function drawDottedLine(x, y, lenght, orientation, color, thickness){
+        const segmentLength = 10;
+        const gapSegments = 5;
+
+        // Vertical line
+        if (orientation){
+            var i = y;
+            while (i < y + lenght) {
+                ctx.lineWidth = thickness;
+                ctx.strokeStyle = color;
+                ctx.beginPath();
+                ctx.moveTo(x, i);
+                ctx.lineTo(x, i + segmentLength);
+                ctx.stroke();
+                i += segmentLength + gapSegments;
+            } 
+        }
+        // horizontal line
+        else if (!orientation) {
+            var i = x;
+            var count = 0
+            while (i < x + lenght) {
+                ctx.lineWidth = thickness;
+                ctx.strokeStyle = color;
+                ctx.beginPath();
+                ctx.moveTo(i, y);
+                ctx.lineTo(i + segmentLength, y);
+                ctx.stroke();
+                i += segmentLength + gapSegments;
+            }
+        }
+        
+    }
+    
+
+</script> 
+
+</body>
+</html>

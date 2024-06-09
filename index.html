@@ -3,15 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Force Matching Game</title>
+  <title>Data Display</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body onload="ui_setup()">
   <div class="game-container">
     <div class="header">
-      <h1>Force Matching Game</h1>
-      <button class="ui_connection_button" onclick="ui_connection_button_click()">Connect Device</button>
-      <div class="ui_message">Disconnected !!</div>
+      <h1>Data Display</h1>
+      <img src="logo_h_x2.png" alt="Logo" class="logo">
     </div>
     <div class="game-display">
       <div class="force-model">
@@ -22,6 +21,8 @@
       </div>
     </div>
     <div class="footer">
+      <button class="ui_connection_button" onclick="ui_connection_button_click()">Connect Device</button>
+      <div class="ui_message">Disconnected !!</div>
       <button class="start-button" onclick="startGame()">Start Game</button>
     </div>
   </div>
