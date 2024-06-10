@@ -5,7 +5,8 @@
 <div class="ui">
     <div class="ui_message"></div>
     <br />
-    <button class="ui_connection_button" onclick="ui_connection_button_click()"></button>
+    <button id="ui_button_connect" class="ui_connection_button" onclick="ui_connection_button_click()"></button>
+    <button id="ui_button_emulate" onclick="ui_button_emulate_click()">Emulate with mouse</button>
 </div>
 
 <script src="hardware.js"> </script>
@@ -20,6 +21,12 @@
     const marginRight = 0;
     const marginUp = screenHeight*0.1;
     const marginDown = screenHeight*0.1;
+
+    // Canvas ID
+    CANVAS_ID="myCanvas"
+    CONNECT_BUTTON_ID="ui_button_connect"
+    EMULATE_BUTTON_ID="ui_button_emulate"
+
 
     //GamePlay constants
     const gameplayHeight = screenHeight - (marginUp + marginDown);
@@ -113,10 +120,10 @@
     var patientMaxForce = 4; //***a changer   
 
     
-    var canvas = '<canvas id="myCanvas" width="'+ screenWidth+'" height="'+ screenHeight+'" style="border:2px solid #d3d3d3;">'
+    var canvas = '<canvas id="' + CANVAS_ID +  '" width="'+ screenWidth+'" height="'+ screenHeight+'" style="border:2px solid #d3d3d3;">'
         document.write(canvas);
     
-    var c = document.getElementById("myCanvas");
+    var c = document.getElementById(CANVAS_ID);
     var ctx = c.getContext("2d");
     var lastTimeStamp = 0;
     
@@ -148,11 +155,24 @@
         let deltaMs = timeStamp-lastTimeStamp;
         lastTimeStamp = timeStamp;
 
-        if (is_connected){
+        if (is_connected || is_emulating){
             gameTime += deltaMs;
         }
 
-        let currentForce = get_current_reading()[forceIndex];
+        let currentForce = 0
+
+        // Read force depending on the source (device or mouse)
+        let get_current_reading = null;
+
+        if (is_emulating){
+          get_current_reading = get_current_mouse_reading;
+        }
+        else{
+          get_current_reading = get_current_device_reading;
+        }
+
+        // Get current reading
+        currentForce = get_current_reading()[forceIndex];
 
         //Drawing to left side scale
         drawScale(marginLeft, marginUp, gameplayHeight, 5, mediumGray, 2)
@@ -363,6 +383,46 @@
         }
         
     }
+
+
+    // Below are functions to emulate the device with the mouse
+    
+    // state of the emulation
+    let is_emulating = false;
+
+    function ui_button_emulate_click(){
+      if (is_emulating){
+        // stop emulation
+        is_emulating = false;
+
+        document.getElementById(CANVAS_ID).removeEventListener('mousemove', ui_canvas_mouse_move);
+        document.getElementById(EMULATE_BUTTON_ID).innerText = 'Start Emulation';
+        document.getElementById(CONNECT_BUTTON_ID).disabled = false;
+      }
+      else{
+        // start emulation
+        is_emulating = true;
+        console.log("hey")
+
+        document.getElementById(CANVAS_ID).addEventListener('mousemove', ui_canvas_mouse_move);
+        document.getElementById(EMULATE_BUTTON_ID).innerText = 'Stop Emulation';
+        document.getElementById(CONNECT_BUTTON_ID).disabled = true;
+      }
+
+
+    }
+
+    let last_mouse_y_reading = 0;
+    function ui_canvas_mouse_move(event){
+      forceDiff = maxForce - minForce;
+      lastMouseYReading =  maxForce - ((event.clientY - marginUp - marginDown) / screenHeight * forceDiff);
+      console.log(lastMouseYReading);
+    }
+
+    function get_current_mouse_reading(){
+      return [0, lastMouseYReading, 0, 0];
+    }
+
     
 
 </script> 
