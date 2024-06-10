@@ -1,6 +1,7 @@
 // Copyright: Marc Feeley, 2024
 // v1: April 10, 2024
 
+let is_connected = false;
 let device_latest_readings = [];
 let readings_to_average = 4;
 
@@ -27,10 +28,12 @@ function get_current_reading() {
 function handle_device_connection() {
   log('handle_device_connection');
   device_latest_readings = [];
+  is_connected = true;
 }
 
 function handle_device_disconnection() {
   log('handle_device_disconnection');
+  is_connected = false;
 }
 
 function handle_device_notification(timestamp, force, ax, ay, az) {
