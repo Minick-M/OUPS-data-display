@@ -122,12 +122,11 @@
     
     var cercleRatio = 0;
     var cercleX = -95; //a changer pr etre dynamique
-
     var gameTime = 0; //Time since the start of the game
-    var rectangleTime = 6000; //in millisecs
+    var rectangleTime = 5000; //in millisecs
 
     // Define an array to store the positions of the flower cursor
-    let flowerPositions = [];
+    let cursorPositions = [];
 
 
     function forceToPixel(force){
@@ -171,26 +170,8 @@
         //drawing of the flower cursor
         ctx.drawImage(yellowFlower, currentTimeX-yellowFlower.width, forceY-yellowFlower.height, 25, 26);
         
-        // Update the flower cursor positions array
-        //*** Je pourrais peut-etre lutiliser pour montrer le tracer total a la fin???
-        flowerPositions.push({ x: currentTimeX, y: forceY });
-
-
-
-        // Draw the line following the flower cursor
-        let cursorX = timeToPixel(currentTimeX-gameTime);
-        let cursorY = forceToPixel(forceY); //Force clamped
-        ctx.beginPath();
-        ctx.fillRect(cursorX, cursorY, 5, 5); // fill in the pixel at (10,10)
-        ctx.strokeStyle = cursorDrawColor;
-        ctx.lineWidth = 2; 
-        ctx.stroke();
 
         
-        //****Limit the number of stored positions to avoid memory issues (utile???)
-        if (flowerPositions.length > 1000) {
-            flowerPositions.shift();
-        }
 
         //drawing rectangle
         let rectWidth = ((sequenceDuration/gameplayTimeView)*gameplayWidth);
@@ -212,10 +193,58 @@
                 //force within the accepted tolerance of the target
                 rectColor = onTargetColor;
             }
-        }    
-        drawRectangles(rectX, rectY, rectWidth, rectHeight, rectColor)
-
+        } 
         
+        // Update the flower cursor positions array
+        //*** Je pourrais peut-etre lutiliser pour montrer le tracer total a la fin???
+        cursorPositions.push({ time: gameTime, y: forceY, color: rectColor });
+
+        //****Limit the number of stored positions to avoid memory issues (utile???)
+        //*** a updater avec passed gameTime.
+        if (cursorPositions.length > 1000) {
+            cursorPositions.shift();
+        }
+        
+        // Draw the line following the flower cursor
+        if (cursorPositions.length > 1){
+
+            ctx.lineWidth = 0;
+
+            for (let i = 0; i < cursorPositions.length -1; i++) {
+                ctx.beginPath();
+                let a = cursorPositions[i];
+                let b = cursorPositions[i + 1];
+
+                let aX = timeToPixel(a.time - gameTime)
+                let bX = timeToPixel(b.time - gameTime)
+                ctx.fillStyle = a.color;
+                ctx.moveTo(aX, a.y);
+                ctx.lineTo(bX,b.y);
+                ctx.lineTo(bX, screenHeight);
+                ctx.lineTo(aX, screenHeight);
+                ctx.lineTo(aX, a.y);
+                ctx.closePath();
+                ctx.fill();
+            }
+            
+
+            //Draw line 
+            ctx.beginPath();
+            ctx.strokeStyle = cursorDrawColor; 
+            ctx.lineWidth = 2;
+            let x = timeToPixel(cursorPositions[0].time - gameTime);
+            ctx.moveTo(x, cursorPositions[0].y);
+
+            for (let i = 0; i < cursorPositions.length -1; i++) {
+                x = timeToPixel(cursorPositions[i].time - gameTime);
+                ctx.lineTo(x, cursorPositions[i].y);
+                //drawRectangles(x, cursorPositions[i].y, 2, 2, cursorDrawColor);
+            }
+            ctx.stroke();
+            
+        }
+
+        drawRectangles(rectX, rectY, rectWidth, rectHeight, rectColor)
 
         //drawing of the buttons
         ctx.drawImage(playButton, gameplayWidth, 125, 32, 32); //*** Changer positionnement. 
