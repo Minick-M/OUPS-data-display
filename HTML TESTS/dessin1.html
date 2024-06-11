@@ -19,17 +19,12 @@
     const marginRight = 0;
     const marginUp = screenHeight*0.1;
     const marginDown = screenHeight*0.1;
-    //text area
+
+    //Text area
     const textPaddingLeft = screenWidth*0.6;
     const textPaddingRight = screenWidth*0.1;
     const textPaddingUp = screenHeight*0.1;
     const textPaddingDown = screenHeight*0.25;
-
-    // Canvas ID
-    CANVAS_ID="myCanvas"
-    CONNECT_BUTTON_ID="ui_button_connect"
-    EMULATE_BUTTON_ID="ui_button_emulate"
-
 
     //GamePlay constants
     const gameplayHeight = screenHeight - (marginUp + marginDown);
@@ -39,8 +34,19 @@
     const currentTimeX = marginLeft + (timeCursor/gameplayTimeView)*gameplayWidth;
     const forceTolerance = 0.5; //how much force variation is tolerated
     const maxForce = 8; //***Ne sera peut-être pas une constante
-    const minForce = 1; //***Doit être updaté en fonction du vagin
-    const sequenceDuration = 6000; //***Doit etre changer dynamiquement
+    const minForce = 0.5; //***Doit être updaté en fonction du vagin
+    const sequenceDuration = 5000; //***Doit etre changer dynamiquement
+    const numSequences = 50;
+    const sequenceGap = 500;  //in millisecs
+    var rectangleTime = 7000; //in millisecs
+    var rectangleIndex = 0; 
+    var loopRectangle = 7000;
+    var sequenceTimes = []; //TEMPORAIRE tests
+
+    for (let i = 0; i < numSequences; i++){
+        let sequence = rectangleTime + sequenceDuration*i + sequenceGap*i
+        sequenceTimes.push(sequence);
+    }
 
     //Colors
     const white = '#FFFFFF';
@@ -48,6 +54,8 @@
     const lightGray = '#d3d3d3'; //***A changer
     const lighterGray = '#e9e9e9'; //***A changer
     const darkGreen = '#99b8b0';
+    const lightGreenProg = '#e9f2f0'
+    const lighterGreenProg = '#f0f6f4'; //TEST 
     const lightGreenMenu = '#dfebe9';
     const lightGreen = '#C4E1DA';
     const lightPinkMenu = '#fce6e2';
@@ -91,6 +99,30 @@
     warning.src = 'warning.png'; 
     loadImage(warning);
 
+    //Patient individual datas
+    var baselineForce = 0.5; //***a changer
+    var patientMaxForce = 4; //***a changer   
+    
+    //GamePlay variables
+    var cercleRatio = 0;
+    var cercleX = -95; //a changer pr etre dynamique
+    var gameTime = 0; //Time since the start of the game
+    var cursorPositions = []; //to store the positions of the flower cursor
+
+    // Canvas ID
+    CANVAS_ID="myCanvas"
+    CONNECT_BUTTON_ID="ui_button_connect"
+    EMULATE_BUTTON_ID="ui_button_emulate"
+    var canvas = '<canvas id="' + CANVAS_ID +  '" width="'+ screenWidth+'" height="'+ screenHeight+'" style="border:2px solid #d3d3d3;">'
+        document.write(canvas);
+    
+    var c = document.getElementById(CANVAS_ID);
+    var ctx = c.getContext("2d");
+    var lastTimeStamp = 0;
+
+
+
+
     function loadImage(img){
         img.onload = function() {
         };
@@ -98,57 +130,6 @@
             console.error('L\'image n\'a pas pu être chargée.'); // Gérer les erreurs de chargement de l'image
         };
     }
-
-    /*
-    const images = [
-    { name: 'yellowFlower', src: 'yellowFlower.png' },
-    { name: 'playButton', src: 'play.png' },
-    { name: 'replayButton', src: 'replay.png' },
-    { name: 'helpButton', src: 'help.png' },
-    { name: 'cancelButton', src: 'cancel.png' },
-    { name: 'progressionBar', src: 'progressionBar.png' }
-    ];
-
-    const imageElements = {};
-
-    images.forEach(imageInfo => {
-        const img = new Image();
-        img.src = imageInfo.src;
-        loadImage(img);
-        imageElements[imageInfo.name] = img;
-    });
-
-    function loadImage(image) {
-        // Your loadImage implementation here
-        image.onload = function() {
-            console.log(`${image.src} loaded successfully`);
-        };
-        image.onerror = function() {
-            console.error(`Error loading ${image.src}`);
-        };
-    }
-    */
-
-    //Patient individual datas
-    var baselineForce = 0; //***a changer
-    var patientMaxForce = 4; //***a changer   
-
-    
-    var canvas = '<canvas id="' + CANVAS_ID +  '" width="'+ screenWidth+'" height="'+ screenHeight+'" style="border:2px solid #d3d3d3;">'
-        document.write(canvas);
-    
-    var c = document.getElementById(CANVAS_ID);
-    var ctx = c.getContext("2d");
-    var lastTimeStamp = 0;
-    
-    var cercleRatio = 0;
-    var cercleX = -95; //a changer pr etre dynamique
-    var gameTime = 0; //Time since the start of the game
-    var rectangleTime = 5000; //in millisecs
-
-    // Define an array to store the positions of the flower cursor
-    let cursorPositions = [];
-
 
     function forceToPixel(force){
         return (screenHeight-marginDown) - (((force-minForce)/(maxForce-minForce))*gameplayHeight);
@@ -195,18 +176,21 @@
         //drawing rectangle
         let rectWidth = ((sequenceDuration/gameplayTimeView)*gameplayWidth);
         let rectHeight = (forceTolerance/(maxForce-minForce)*gameplayHeight);
-        let rectX = timeToPixel(rectangleTime - gameTime);
-        let rectY = forceToPixel(patientMaxForce) - rectHeight/2;
         let rectColor = rectangleColor;
 
-        if (gameTime >= rectangleTime && gameTime <= rectangleTime + sequenceDuration){
-            if (currentForce > patientMaxForce + forceTolerance/2){
+        if (rectangleTime + sequenceDuration -gameTime < -sequenceDuration){
+            rectangleTime = gameTime + loopRectangle
+        };
+
+        if (gameTime >= sequenceTimes[rectangleIndex] && gameTime <= sequenceTimes[rectangleIndex] + sequenceDuration){
+            let force = ((rectangleIndex % 2) == 0)? patientMaxForce : baselineForce;
+            if (currentForce > force + forceTolerance/2){
                 //force too high
                 rectColor = overColor;
                 //drawing of the text
                 ctx.drawImage(warning, textPaddingLeft, textPaddingDown);
             }
-            else if (currentForce < patientMaxForce - forceTolerance/2){
+            else if (currentForce < force - forceTolerance/2){
                 //force too low
                 rectColor = underColor;
                 //drawing of the text
@@ -216,7 +200,9 @@
                 //force within the accepted tolerance of the target
                 rectColor = onTargetColor;
             }
-        } 
+        } else if (gameTime > sequenceTimes[rectangleIndex] + sequenceDuration){
+            ++ rectangleIndex;
+        }
         
         // Update the flower cursor positions array
         //*** Je pourrais peut-etre lutiliser pour montrer le tracer total a la fin???
@@ -231,19 +217,24 @@
         // Draw the line following the flower cursor
         if (cursorPositions.length > 1){
             
-            ctx.lineWidth = -1;
-
+            ctx.lineWidth = 0;
+            let lastX = -1;
             for (let i = 0; i < cursorPositions.length -1; i++) {
                 ctx.beginPath();
                 let a = cursorPositions[i];
                 let b = cursorPositions[i + 1];
-                let aX = timeToPixel(a.time - gameTime);
+                let aX = Math.floor(timeToPixel(a.time - gameTime));
                 let bX = timeToPixel(b.time - gameTime);
 
+                if (aX < lastX + 3){
+                    //continue;
+                }
+                lastX = aX;
+
                 ctx.moveTo(aX, a.y);
-                ctx.lineTo(bX,b.y);
-                ctx.lineTo(bX, screenHeight);
                 ctx.lineTo(aX, screenHeight);
+                ctx.lineTo(bX, screenHeight);
+                ctx.lineTo(bX,b.y);
                 ctx.lineTo(aX, a.y);
 
                 //Create a vertical gradient from the color to white
@@ -275,6 +266,26 @@
                 //ctx.globalAlpha = 1.0;
                 */ 
             }
+
+        }
+
+        //Drawing to left side scale
+        drawScale(marginLeft, marginUp, gameplayHeight, 5, mediumGray, 2)
+       
+        //drawing of vertical dotted lines of the cursor
+        drawDottedLine(currentTimeX, marginUp, gameplayHeight, 1, lightGreen, 1)
+        
+
+        for (let i = 0; i<sequenceTimes.length; i++){
+            let rectX = timeToPixel(sequenceTimes[i] - gameTime);
+            let force = ((i % 2) == 0)? patientMaxForce : baselineForce;
+            let rectY = forceToPixel(force) - rectHeight/2;
+            let color = i == rectangleIndex? rectColor : rectangleColor; 
+            drawRectangles(rectX, rectY, rectWidth, rectHeight, color)
+        }
+
+        if (cursorPositions.length > 1){
+        
             //Draw line 
             ctx.beginPath();
             ctx.strokeStyle = cursorDrawColor; 
@@ -289,13 +300,6 @@
             }
             ctx.stroke(); 
         }
-
-        //Drawing to left side scale
-        drawScale(marginLeft, marginUp, gameplayHeight, 5, mediumGray, 2)
-       
-        //drawing of vertical dotted lines of the cursor
-        drawDottedLine(currentTimeX, marginUp, gameplayHeight, 1, lightGreen, 1)
-        drawRectangles(rectX, rectY, rectWidth, rectHeight, rectColor)
 
         //drawing of horizontal dotted lines of the cursor
         drawDottedLine(marginLeft-20, forceY, gameplayWidth, 0, lightGreen, 1)
@@ -350,7 +354,7 @@
 
     // Draw gradient color rectangle
     function drawRectangles(x, y, width, height, color){
-        // Set shadow properties
+        //Set shadow properties
         ctx.shadowColor = darkGreen;
         ctx.shadowBlur = 10;
         ctx.shadowOffsetX = 0;
