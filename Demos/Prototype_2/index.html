@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<div class="ui">
+    <div class="ui_message"></div>
+    <br />
+    <button id="ui_button_connect" class="ui_connection_button" onclick="ui_connection_button_click()"></button>
+    <button id="ui_button_emulate" onclick="ui_button_emulate_click()">Emulate with mouse</button>
+</div>
+
+<script src="hardware.js"> </script>
+<script src="utilities.js"></script>
+<!--script src="gameModeSingStar.js"></script-->
+<script src="gameModeHistogram.js"></script>
+<script src="mouseEmulation.js"></script>
+<script src="constants.js"></script>
+
+<script>
+    //Screens dimensions
+    const screenWidth = 600;
+    const screenHeight = 278
+    const marginLeft = screenWidth*0.1;
+    const marginRight = 0;
+    const marginUp = screenHeight*0.1;
+    const marginDown = screenHeight*0.1;
+
+    //Text area
+    const textPaddingLeft = screenWidth*0.6;
+    const textPaddingRight = screenWidth*0.1;
+    const textPaddingUp = screenHeight*0.1;
+    const textPaddingDown = screenHeight*0.25;
+
+    //GamePlay constants
+    const gameplayHeight = screenHeight - (marginUp + marginDown);
+    const gameplayWidth = screenWidth - (marginLeft + marginRight);
+    const gameplayTimeView = 10000; //in millisecs
+    const timeCursor = gameplayTimeView*0.3;
+    const currentTimeX = marginLeft + (timeCursor/gameplayTimeView)*gameplayWidth;
+    //***could be updated with level difficulty
+    const forceTolerance = 0.5; //how much force variation is tolerated
+    const maxForce = 8; //***Ne sera peut-être pas une constante
+    const minForce = 0.5; //***Doit être updaté en fonction du vagin
+
+    //Colors
+    const white = '#FFFFFF';
+    const mediumGray = '#9A9AA2';
+    const lightGray = '#d3d3d3'; //***A changer
+    const lighterGray = '#e9e9e9'; //***A changer
+    const darkGreen = '#99b8b0';
+    const lightGreenProg = '#e9f2f0'
+    const lighterGreenProg = '#f0f6f4'; //TEST 
+    const lightGreenMenu = '#dfebe9';
+    const lightGreen = '#C4E1DA';
+    const lightPinkMenu = '#fce6e2';
+    const lightPink = '#FFDEDA';
+    const lightYellowMenu = '#fef8d2';
+    const lightYellow = '#FCEA81';
+    const brightPink = '#FD66A0';
+    const backgroundColor = white;
+    const rectangleColor = lighterGray;
+    const overColor = lightPink; //color when force is over the target
+    const underColor = lightYellowMenu; //color when force is under the target
+    const onTargetColor = lightGreen; //color when force is with tolerance of the target
+    const cursorDrawColor = brightPink;
+
+    const histogramColor = brightPink;
+    const cursorDrawColorHist = lightYellow;
+    const drawingColor = lightYellowMenu;
+
+    //Images
+    const yellowFlower = loadImage('yellowFlower.png');
+    const playButton = loadImage('play.png');
+    const replayButton = loadImage('replay.png');
+    const helpButton = loadImage('help.png');
+    const cancelButton = loadImage('cancel.png');
+    const progressionBar = loadImage('progressionBar.png');
+    const flowerPetal = loadImage('flowerPetal.');
+    const flowerPink = loadImage('flowerPink.png');
+    const warning = loadImage('warning.png');
+
+    //Patient individual datas
+    var baselineForce = 0.5; //***a changer
+    var patientMaxForce = 4; //***a changer   
+    
+    //GamePlay variables
+    var cercleRatio = 0;
+    var cercleX = -95; //a changer pr etre dynamique
+    var gameTime = 0; //Time since the start of the game
+    var cursorPositions = []; //to store the positions of the flower cursor
+
+    // Canvas ID
+    CANVAS_ID="myCanvas"
+    CONNECT_BUTTON_ID="ui_button_connect"
+    EMULATE_BUTTON_ID="ui_button_emulate"
+    var canvas = '<canvas id="' + CANVAS_ID +  '" width="'+ screenWidth+'" height="'+ screenHeight+'" style="border:2px solid #d3d3d3;">'
+        document.write(canvas);
+    
+    var c = document.getElementById(CANVAS_ID);
+    var ctx = c.getContext("2d");
+    var lastTimeStamp = 0;
+
+    function loadImage(imgSrc){
+        newImage = new Image();
+        newImage.src = "Images/" + imgSrc;
+        newImage.onload = function() {
+        };
+        newImage.onerror = function() {
+            console.error('L\'image n\'a pas pu être chargée.'); // Gérer les erreurs de chargement de l'image
+        };
+
+        return newImage;
+    }
+
+    function gameLoop(timeStamp){
+        window.requestAnimationFrame(gameLoop);
+        clear();
+        let deltaMs = timeStamp-lastTimeStamp;
+        lastTimeStamp = timeStamp;
+
+        //gameModeSingStarDraw(deltaMs);
+        gameModeHistogramDraw(deltaMs);
+    }
+
+    window.requestAnimationFrame(gameLoop);
+
+    
+
+
+    
+
+</script> 
+
+</body>
+</html>
