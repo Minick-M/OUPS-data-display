@@ -115,9 +115,7 @@ function gameModeHistogramDraw(deltaMs){
             ctx.closePath();
             ctx.fill();
             ctx.globalAlpha = 1.0;
-
         }
-
     }
 
     if (cursorPositions.length > 1){

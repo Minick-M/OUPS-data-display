@@ -80,17 +80,17 @@ function drawScale(x, y, height, numScales, color, thickness){
 // Draw gradient color rectangle
 function drawRectangles(x, y, width, height, color){
     //Set shadow properties
-    ctx.shadowColor = darkGreen;
-    ctx.shadowBlur = 10;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 0;
+    //ctx.shadowColor = lighterGray;
+    //ctx.shadowBlur = 5;
+    //ctx.shadowOffsetX = 0;
+    //ctx.shadowOffsetY = 0;
 
     ctx.fillStyle = color;
     //ctx.strokeStyle = mediumGray;
     ctx.beginPath();
     ctx.roundRect(x, y, width, height, [40]);
     ctx.fill();
-    //ctx.stroke();
+    ctx.stroke();
 
     // Reset shadow properties to avoid affecting other drawings
     ctx.shadowColor = 'transparent';

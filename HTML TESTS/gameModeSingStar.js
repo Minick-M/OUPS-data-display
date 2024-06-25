@@ -5,17 +5,15 @@ const sequenceGap = 500;  //in millisecs
 var rectangleTime = 7000; //in millisecs
 var rectangleIndex = 0; 
 var loopRectangle = 7000;
-
 var singStarSequenceTimes = []; //TEMPORAIRE tests
 
 for (let i = 0; i < numSequences; i++){
     let sequence = rectangleTime + sequenceDuration*i + sequenceGap*i
-    singStarSequenceTimes.push(sequence);
+    singStarSequenceTimes.push({time: sequence, forceRatio: ((i % 2) == 0)? 1 : 0});
 }
-
+console.log(singStarSequenceTimes);
 
 function gameModeSingStarDraw(deltaMs){
-    
     
     if (is_connected || is_emulating){
         gameTime += deltaMs;
@@ -43,37 +41,35 @@ function gameModeSingStarDraw(deltaMs){
     //drawing rectangle
     let rectWidth = ((sequenceDuration/gameplayTimeView)*gameplayWidth);
     let rectHeight = (forceTolerance/(maxForce-minForce)*gameplayHeight);
-    let rectColor = rectangleColor;
+    let rectColor = ((rectangleIndex % 2) == 0)? contractRectColor : relaxRectColor;
 
     if (rectangleTime + sequenceDuration -gameTime < -sequenceDuration){
         rectangleTime = gameTime + loopRectangle
     };
 
-    if (gameTime >= singStarSequenceTimes[rectangleIndex] && gameTime <= singStarSequenceTimes[rectangleIndex] + sequenceDuration){
-        let force = ((rectangleIndex % 2) == 0)? patientMaxForce : baselineForce;
-        if (currentForce > force + forceTolerance/2){
+    if (gameTime >= singStarSequenceTimes[rectangleIndex].time && gameTime <= singStarSequenceTimes[rectangleIndex].time + sequenceDuration){
+        let force = singStarSequenceTimes[rectangleIndex].forceRatio * patientMaxForce;
+    
+        if (currentForce > force + forceTolerance/2 || currentForce < force - forceTolerance/2){
             //force too high
-            rectColor = overColor;
+            rectColor = offTargetColor;
+            cursorDrawColor = offTargetColor;
             //drawing of the text
             ctx.drawImage(warning, textPaddingLeft, textPaddingDown);
         }
-        else if (currentForce < force - forceTolerance/2){
-            //force too low
-            rectColor = underColor;
-            //drawing of the text
-            ctx.drawImage(warning, textPaddingLeft, textPaddingDown);
-        }
-        else {
+        else if (currentForce >= force - forceTolerance/2 && currentForce <= force + forceTolerance/2){
             //force within the accepted tolerance of the target
-            rectColor = onTargetColor;
+            rectColor = ((rectangleIndex % 2) == 0)? contractTargetColor : relaxTargetColor;
+            cursorDrawColor = ((rectangleIndex % 2) == 0)? contractRectColor : relaxRectColor;;
         }
-    } else if (gameTime > singStarSequenceTimes[rectangleIndex] + sequenceDuration){
+        
+    } else if (gameTime > singStarSequenceTimes[rectangleIndex].time + sequenceDuration){
         ++ rectangleIndex;
     }
     
     // Update the flower cursor positions array
     //*** Je pourrais peut-etre lutiliser pour montrer le tracer total a la fin???
-    cursorPositions.push({ time: gameTime, y: forceY, color: rectColor });
+    cursorPositions.push({ time: gameTime, y: forceY, color: cursorDrawColor });
 
     //****Limit the number of stored positions to avoid memory issues (utile???)
     //*** a updater avec passed gameTime.
@@ -93,9 +89,6 @@ function gameModeSingStarDraw(deltaMs){
             let aX = Math.floor(timeToPixel(a.time - gameTime));
             let bX = timeToPixel(b.time - gameTime);
 
-            if (aX < lastX + 3){
-                //continue;
-            }
             lastX = aX;
 
             ctx.moveTo(aX, a.y);
@@ -104,7 +97,7 @@ function gameModeSingStarDraw(deltaMs){
             ctx.lineTo(bX,b.y);
             ctx.lineTo(aX, a.y);
 
-            //Create a vertical gradient from the color to white
+            //Create a vertical gradient from the color of the max rectangle to the color of lower rectangle
             let gradient = ctx.createLinearGradient(0, screenHeight*0.75, 0, screenHeight);
             gradient.addColorStop(0, a.color);
             gradient.addColorStop(1, 'white');
@@ -112,50 +105,29 @@ function gameModeSingStarDraw(deltaMs){
             ctx.fillStyle = gradient;
             ctx.closePath();
             ctx.fill();
-
-            /*
-            // Create a horizontal gradient from the color to the next color
-            let horizontalGradient = ctx.createLinearGradient(aX, 0, bX, 0);
-            horizontalGradient.addColorStop(0, a.color);
-            horizontalGradient.addColorStop(1, b.color);
-            
-            // Draw the area with the horizontal gradient with some transparency
-            //ctx.globalAlpha = 0.5 ;  // Adjust the alpha as needed
-            ctx.fillStyle = horizontalGradient;
-            ctx.moveTo(aX, a.y);
-            ctx.lineTo(bX, b.y);
-            ctx.lineTo(bX, screenHeight);
-            ctx.lineTo(aX, screenHeight);
-            ctx.closePath();
-            ctx.fill();
-
-            // Reset the alpha to default
-            //ctx.globalAlpha = 1.0;
-            */ 
         }
-
     }
 
     //Drawing to left side scale
-    drawScale(marginLeft, marginUp, gameplayHeight, 5, mediumGray, 2)
+    drawScale(marginLeft, marginUp, gameplayHeight, 5, scaleColor, 2)
    
     //drawing of vertical dotted lines of the cursor
-    drawDottedLine(currentTimeX, marginUp, gameplayHeight, 1, lightGreen, 1)
-    
+    drawDottedLine(currentTimeX, marginUp, gameplayHeight, 1, dottedLineColor, 1)
 
     for (let i = 0; i<singStarSequenceTimes.length; i++){
-        let rectX = timeToPixel(singStarSequenceTimes[i] - gameTime);
+        let rectX = timeToPixel(singStarSequenceTimes[i].time - gameTime);
         let force = ((i % 2) == 0)? patientMaxForce : baselineForce;
         let rectY = forceToPixel(force) - rectHeight/2;
-        let color = i == rectangleIndex? rectColor : rectangleColor; 
-        drawRectangles(rectX, rectY, rectWidth, rectHeight, color)
+        let barColor = ((i % 2) == 0)? contractRectColor : relaxRectColor;
+        
+        let color = i == rectangleIndex? rectColor : barColor; 
+        drawRectangles(rectX, rectY, rectWidth, rectHeight, color);
     }
 
     if (cursorPositions.length > 1){
-    
         //Draw line 
         ctx.beginPath();
-        ctx.strokeStyle = cursorDrawColor; 
+        ctx.strokeStyle = cursorLineColor; 
         ctx.lineWidth = 1.5;
         let x = timeToPixel(cursorPositions[0].time - gameTime);
         ctx.moveTo(x, cursorPositions[0].y);
@@ -169,7 +141,7 @@ function gameModeSingStarDraw(deltaMs){
     }
 
     //drawing of horizontal dotted lines of the cursor
-    drawDottedLine(marginLeft-20, forceY, gameplayWidth, 0, lightGreen, 1)
+    drawDottedLine(marginLeft-20, forceY, gameplayWidth, 0, dottedLineColor, 1)
 
     //drawing the max flower
     let flowerY = forceToPixel(patientMaxForce);
@@ -185,34 +157,4 @@ function gameModeSingStarDraw(deltaMs){
     ctx.drawImage(cancelButton, gameplayWidth, 125 + 105, 32, 32);
     ctx.drawImage(progressionBar, gameplayWidth -40, 5);
 
-    //drawing outer circle
-    /*
-    ctx.lineWidth = 15;
-    ctx.beginPath();
-    ctx.lineCap = "butt";
-    ctx.strokeStyle = brightPink;
-    ctx.arc(cercleX,screenHeight / 2,90,0,2*Math.PI);
-    ctx.stroke();
-    
-    // Advancing inner circle
-    cercleRatio += deltaMs / 10000;
-    if(cercleRatio > 1.0)
-    {
-        cercleRatio = 0;
-    }
-
-    //drawing inner circle
-    ctx.beginPath();
-    ctx.lineWidth = 8;
-    ctx.strokeStyle = lightPink;
-    ctx.lineCap = "round";
-    ctx.arc(cercleX,screenHeight / 2,90,0,2*Math.PI*cercleRatio);
-    ctx.stroke();
-
-    // Moving circle with wrap around
-    cercleX += (screenWidth/5000)*deltaMs;
-    if (cercleX >= screenWidth + 95){
-        cercleX = -95
-    }
-    */ 
 }

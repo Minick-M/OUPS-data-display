@@ -42,31 +42,47 @@
     const maxForce = 8; //***Ne sera peut-être pas une constante
     const minForce = 0.5; //***Doit être updaté en fonction du vagin
 
-    //Colors
+    //Basic colors
     const white = '#FFFFFF';
     const mediumGray = '#9A9AA2';
     const lightGray = '#d3d3d3'; //***A changer
     const lighterGray = '#e9e9e9'; //***A changer
-    const darkGreen = '#99b8b0';
-    const lightGreenProg = '#e9f2f0'
-    const lighterGreenProg = '#f0f6f4'; //TEST 
-    const lightGreenMenu = '#dfebe9';
-    const lightGreen = '#C4E1DA';
-    const lightPinkMenu = '#fce6e2';
-    const lightPink = '#FFDEDA';
-    const lightYellowMenu = '#fef8d2';
-    const lightYellow = '#FCEA81';
-    const brightPink = '#FD66A0';
-    const backgroundColor = white;
-    const rectangleColor = lighterGray;
-    const overColor = lightPink; //color when force is over the target
-    const underColor = lightYellowMenu; //color when force is under the target
-    const onTargetColor = lightGreen; //color when force is with tolerance of the target
-    const cursorDrawColor = brightPink;
+    const accentPink = '#FD66A0';
+    //Menu colors
+    const menuGreen = '#dfebe9';
+    const menuYellow = '#fef8d2';
+    const menuPink = '#fce6e2';
+    //3 dots colors
+    const dotsGreen = '#C4E1DA';
+    const dotsPink = '#FFDEDA';
+    const dotsYellow = '#FCEA81';
+    //Progression greens
+    const progDarkGreen = '#99b8b0';
+    const progMediumGreen = '#e9f2f0'
+    const progLightGreen = '#f0f6f4'; //TEST
+    //Design colors
+    const scaleColor = mediumGray;
+    const dottedLineColor = progMediumGreen;
+    const cursorLineColor = accentPink;
+    var cursorDrawColor = lighterGray;
 
-    const histogramColor = brightPink;
-    const cursorDrawColorHist = lightYellow;
-    const drawingColor = lightYellowMenu;
+    //Sing Star mode color choices
+    const backgroundColor = white;
+    const contractRectColor = menuPink;
+    const relaxRectColor = menuGreen;
+    const offTargetColor = lighterGray;
+    const contractTargetColor = dotsPink; //color when force is with tolerance of the target
+    const relaxTargetColor = dotsGreen;
+    //***Needed?
+    const overColor = dotsPink; //color when force is over the target
+    const underColor = menuYellow; //color when force is under the target
+    
+    
+
+    //histogram mode color choices
+    const histogramColor = accentPink;
+    const cursorDrawColorHist = dotsYellow;
+    const drawingColor = menuYellow;
 
     //Images
     const yellowFlower = loadImage('yellowFlower.png');
@@ -123,11 +139,6 @@
     }
 
     window.requestAnimationFrame(gameLoop);
-
-    
-
-
-    
 
 </script> 
 

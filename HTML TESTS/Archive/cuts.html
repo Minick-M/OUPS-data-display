@@ -37,3 +37,34 @@ ctx.stroke();
         ctx.stroke();
         y += segmentLength + gapLength;
     }
+
+    //drawing outer circle
+    /*
+    ctx.lineWidth = 15;
+    ctx.beginPath();
+    ctx.lineCap = "butt";
+    ctx.strokeStyle = brightPink;
+    ctx.arc(cercleX,screenHeight / 2,90,0,2*Math.PI);
+    ctx.stroke();
+    
+    // Advancing inner circle
+    cercleRatio += deltaMs / 10000;
+    if(cercleRatio > 1.0)
+    {
+        cercleRatio = 0;
+    }
+
+    //drawing inner circle
+    ctx.beginPath();
+    ctx.lineWidth = 8;
+    ctx.strokeStyle = lightPink;
+    ctx.lineCap = "round";
+    ctx.arc(cercleX,screenHeight / 2,90,0,2*Math.PI*cercleRatio);
+    ctx.stroke();
+
+    // Moving circle with wrap around
+    cercleX += (screenWidth/5000)*deltaMs;
+    if (cercleX >= screenWidth + 95){
+        cercleX = -95
+    }
+    */ 
