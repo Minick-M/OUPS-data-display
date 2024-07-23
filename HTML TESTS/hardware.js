@@ -11,18 +11,31 @@ const xIndex = 2;
 const yIndex = 3;
 const zIndex = 4;
 
-function get_current_device_reading() {
-  let reading = [0, 0, 0, 0, 0];
-  for (let i=0; i<device_latest_readings.length; i++) {
-    reading[0] = device_latest_readings[i][0];
-    for (let j=1; j<reading.length; j++) {
-      reading[j] += device_latest_readings[i][j];
+function get_current_device_reading()
+{
+  if (is_connected)
+  {
+    let reading = [0, 0, 0, 0, 0];
+    for (let i=0; i<device_latest_readings.length; i++) 
+    {
+      reading[0] = device_latest_readings[i][0];
+      for (let j=1; j<reading.length; j++) {
+        reading[j] += device_latest_readings[i][j];
+      }
     }
+
+    if(device_latest_readings.length > 0)
+    {
+      for (let j=1; j<reading.length; j++) {
+        reading[j] = reading[j] / device_latest_readings.length;
+      }
+    }
+    return reading;
   }
-  for (let j=1; j<reading.length; j++) {
-    reading[j] = reading[j] / device_latest_readings.length;
+  else
+  {
+    return get_current_mouse_reading();
   }
-  return reading;
 }  
     
 function handle_device_connection() {

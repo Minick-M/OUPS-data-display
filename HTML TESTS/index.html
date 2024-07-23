@@ -1,19 +1,69 @@
 <!DOCTYPE html>
 <html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oups! Data Display</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@700&display=swap');
+
+
+        #canvasContainer {
+            position: relative;
+            width: 600px;
+            height: 278px;
+            
+        }
+
+        #myCanvas {
+            z-index: 1;
+        }
+        
+        #startButton {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+            width: 175px;
+            height: 175px;
+            border-radius: 50%;
+            background-color: #FFDEDA;
+            color: '#000000';
+            font-family: 'Quicksand';
+            font-size: 24px;
+            text-align: center;
+            border: 3px solid white;
+            cursor: pointer;
+            outline: none;
+            opacity: 0.7;
+        }
+    </style>
+</head>
 <body>
 
-<div class="ui">
+<div>
     <div class="ui_message"></div>
     <br />
     <button id="ui_button_connect" class="ui_connection_button" onclick="ui_connection_button_click()"></button>
-    <button id="ui_button_emulate" onclick="ui_button_emulate_click()">Emulate with mouse</button>
+    <button id="ui_button_pause" class="ui_pause_button" onclick="ui_connection_pause_click()">Pause</button>
+   
+    <div id="canvasContainer">
+        <canvas id="myCanvas" width="600" height="278"></canvas>
+        <button id="startButton" onclick="on_start_button_click()">Appuyez pour commencer</button>
+    </div>
 </div>
 
+
+<script src="mouseEmulation.js"></script>
 <script src="hardware.js"> </script>
 <script src="utilities.js"></script>
+<script src="cheats.js"></script>
 <script src="gameModeSingStar.js"></script>
 <!--script src="gameModeHistogram.js"></script-->
-<script src="mouseEmulation.js"></script>
+<!--script src="cloudAnimation.js"> </script-->
+<!--script src="PelletAnimation.js"> </script-->
 <script src="constants.js"></script>
 
 <script>
@@ -31,6 +81,11 @@
     const textPaddingUp = screenHeight*0.1;
     const textPaddingDown = screenHeight*0.25;
 
+    // Progression bar area
+    const progPaddingLeft = screenWidth*0.4;
+    const progPaddingRight = screenWidth*0.1;
+    const progPaddingUp = screenWidth*0.01;
+
     //GamePlay constants
     const gameplayHeight = screenHeight - (marginUp + marginDown);
     const gameplayWidth = screenWidth - (marginLeft + marginRight);
@@ -38,20 +93,24 @@
     const timeCursor = gameplayTimeView*0.3;
     const currentTimeX = marginLeft + (timeCursor/gameplayTimeView)*gameplayWidth;
     //***could be updated with level difficulty
-    const forceTolerance = 0.5; //how much force variation is tolerated
+    const forceTolerance = 0.6; //how much force variation is tolerated
     const maxForce = 8; //***Ne sera peut-être pas une constante
     const minForce = 0.5; //***Doit être updaté en fonction du vagin
 
     //Basic colors
     const white = '#FFFFFF';
     const mediumGray = '#9A9AA2';
-    const lightGray = '#d3d3d3'; //***A changer
-    const lighterGray = '#e9e9e9'; //***A changer
+    //const lightGray = '#d3d3d3'; //***A changer
+    const lightGray = '#e5e5e5';
+    const lighterGray = '#f2f2f2'; //***A changer
     const accentPink = '#FD66A0';
     //Menu colors
     const menuGreen = '#dfebe9';
     const menuYellow = '#fef8d2';
+    const lighterMenuYellow = '#fffce9';
+    const darkerMenuYellow = '#fdf2ae';
     const menuPink = '#fce6e2';
+    const lighterMenuPink = '#fdf0ee';
     //3 dots colors
     const dotsGreen = '#C4E1DA';
     const dotsPink = '#FFDEDA';
@@ -60,24 +119,24 @@
     const progDarkGreen = '#99b8b0';
     const progMediumGreen = '#e9f2f0'
     const progLightGreen = '#f0f6f4'; //TEST
+
     //Design colors
     const scaleColor = mediumGray;
     const dottedLineColor = progMediumGreen;
     const cursorLineColor = accentPink;
     var cursorDrawColor = lighterGray;
+    const curvedLineColor = lightGray;
+   
 
     //Sing Star mode color choices
     const backgroundColor = white;
     const contractRectColor = menuPink;
     const relaxRectColor = menuGreen;
+    const pauseColor = menuYellow;
     const offTargetColor = lighterGray;
     const contractTargetColor = dotsPink; //color when force is with tolerance of the target
     const relaxTargetColor = dotsGreen;
-    //***Needed?
-    const overColor = dotsPink; //color when force is over the target
-    const underColor = menuYellow; //color when force is under the target
-    
-    
+    const pauseTargetColor = darkerMenuYellow;     
 
     //histogram mode color choices
     const histogramColor = accentPink;
@@ -91,31 +150,34 @@
     const helpButton = loadImage('help.png');
     const cancelButton = loadImage('cancel.png');
     const progressionBar = loadImage('progressionBar.png');
-    const flowerPetal = loadImage('flowerPetal.');
+    const flowerPetal = loadImage('flowerPetal.jpg');
     const flowerPink = loadImage('flowerPink.png');
     const warning = loadImage('warning.png');
+    const flowerBackground = loadImage('flowerBackground.jpg');
 
     //Patient individual datas
     var baselineForce = 0.5; //***a changer
     var patientMaxForce = 4; //***a changer   
     
-    //GamePlay variables
-    var cercleRatio = 0;
-    var cercleX = -95; //a changer pr etre dynamique
+    //GamePlay engine and variables
     var gameTime = 0; //Time since the start of the game
+    var timeScale = 1.0;
     var cursorPositions = []; //to store the positions of the flower cursor
+    var lastTimeStamp = 0;
+    var isGameModeStarted = false;
 
     // Canvas ID
-    CANVAS_ID="myCanvas"
-    CONNECT_BUTTON_ID="ui_button_connect"
-    EMULATE_BUTTON_ID="ui_button_emulate"
-    var canvas = '<canvas id="' + CANVAS_ID +  '" width="'+ screenWidth+'" height="'+ screenHeight+'" style="border:2px solid #d3d3d3;">'
+    const CANVAS_ID="myCanvas"
+    const CONNECT_BUTTON_ID="ui_button_connect"
+    const START_BUTTON_ID="startButton"
+    var canvas = '<canvas id="' + CANVAS_ID +  '" width="'+ screenWidth+'" height="'+ screenHeight+'>'
         document.write(canvas);
     
     var c = document.getElementById(CANVAS_ID);
     var ctx = c.getContext("2d");
-    var lastTimeStamp = 0;
+    var startButton = document.getElementById(START_BUTTON_ID); 
 
+    
     function loadImage(imgSrc){
         newImage = new Image();
         newImage.src = "Images/" + imgSrc;
@@ -129,13 +191,61 @@
     }
 
     function gameLoop(timeStamp){
+
+
         window.requestAnimationFrame(gameLoop);
         clear();
-        let deltaMs = timeStamp-lastTimeStamp;
+        let deltaMs = (timeStamp-lastTimeStamp) * timeScale;
         lastTimeStamp = timeStamp;
 
-        gameModeSingStarDraw(deltaMs);
+        if (isGameModeStarted)
+        {
+            if (!isPaused)
+            {
+                gameTime += deltaMs;
+            }
+
+            gameModeSingStarDraw(deltaMs);
+        }
+
+        else
+        {
+            ctx.save();
+            ctx.globalAlpha = 0.8;
+            ctx.filter = 'blur(0.6px) brightness(0.8) contrast(1.8)'
+            ctx.drawImage(flowerBackground, 0, 0, screenWidth, screenHeight);
+            ctx.globalAlpha = 1.0;
+            ctx.restore();
+        }
+        
         //gameModeHistogramDraw(deltaMs);
+        //animateCloud(deltaMs);
+        //animatePellet(deltaMs);
+    }
+
+    function on_start_button_click() 
+    {
+        isGameModeStarted = true; 
+        startButton.style.display = 'none';
+
+    }
+
+    function ui_connection_pause_click()
+    {
+        togglePause();
+
+        let but = document.querySelector('.ui_pause_button');
+        if (but) {
+            if (isPaused) 
+            {
+                but.innerText = 'Play';
+            }
+            else 
+            {
+                but.innerText = 'Pause';
+            }
+
+          }
     }
 
     window.requestAnimationFrame(gameLoop);

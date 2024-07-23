@@ -18,6 +18,11 @@ function gameModeHistogramDraw(deltaMs){
         gameTime += deltaMs;
     }
 
+    else
+    {
+        ctx.drawImage(flowerBackground, 0, 0, canvas.width, canvas.height);
+    }
+
     let currentForce = 0
 
     // Read force depending on the source (device or mouse)
