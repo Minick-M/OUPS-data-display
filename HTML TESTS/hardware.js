@@ -69,8 +69,11 @@ let device_name_prefix = 'Oups!';
 let OUPS_service_id         = '0000ffe0-0000-1000-8000-00805f9b34fb';
 let force_characteristic_id = '0000ffe2-0000-1000-8000-00805f9b34fb';
 let IMU_characteristic_id   = '0000ffe3-0000-1000-8000-00805f9b34fb';
+let sensor_characteristic_id = '0000ffea-0000-1000-8000-00805f9b34fb';
+
 
 let bluetooth_device     = null;
+let sensor_characteristic = null;
 let force_characteristic = null;
 let IMU_characteristic   = null;
 
@@ -94,13 +97,9 @@ async function on_disconnected() {
   ui_state_set('disconnected');
   handle_device_disconnection();
 
-  force_characteristic.removeEventListener('characteristicvaluechanged',
-    handle_force_value_changed);
-  force_characteristic = null;
-
-  IMU_characteristic.removeEventListener('characteristicvaluechanged',
-    handle_IMU_value_changed);
-  IMU_characteristic = null;
+  sensor_characteristic.removeEventListener('characteristicvaluechanged',
+    handle_sensor_value_changed);
+  sensor_characteristic = null;
 
   bluetooth_device = null;
 }
@@ -131,6 +130,7 @@ async function connect_device() {
 
   const service = await server.getPrimaryService(OUPS_service_id);
 
+  /**
   force_characteristic = await service.getCharacteristic(force_characteristic_id);
   force_characteristic.addEventListener('characteristicvaluechanged',
     handle_force_value_changed);
@@ -138,6 +138,13 @@ async function connect_device() {
   IMU_characteristic = await service.getCharacteristic(IMU_characteristic_id);
   IMU_characteristic.addEventListener('characteristicvaluechanged',
     handle_IMU_value_changed);
+  
+  */
+
+  sensor_characteristic = await service.getCharacteristic(sensor_characteristic_id);
+
+  sensor_characteristic.addEventListener('characteristicvaluechanged',
+    handle_sensor_value_changed);
 
   latest_force = null;
 
@@ -152,8 +159,7 @@ async function start_notifications() {
   log('*** Starting notifications');
 
   try {
-    await force_characteristic.startNotifications();
-    await IMU_characteristic.startNotifications();
+    await sensor_characteristic.startNotifications();
   } catch (exc) {
     log('Error: ' + exc);
   }
@@ -208,6 +214,44 @@ async function handle_IMU_value_changed(event) {
   if (latest_force !== null) {
     handle_device_notification(timestamp, latest_force, ax, ay, az);
   }
+}
+
+async function handle_sensor_value_changed(event) {
+
+  const view = event.target.value;
+
+  LAST_VIEW = view;
+
+  //debug
+  if (trace_packets) { 
+    let str = 'force packet:';
+    for (let i=0; i<14; i++) {
+      str = str + ' ' + view.getUint8(i);
+    }
+    log(str);
+  }
+  let timestamp = view.getUint32(0, true);
+  let force = view.getInt16(4, true);
+  let cal_force = force * 9.806 / 1000;
+  let accel_precision = 8192;
+  let ax = view.getInt16(6, true);
+  let cal_ax = ax / accel_precision;
+  let ay = view.getInt16(8, true);
+  let cal_ay = ay / accel_precision;
+  let az = view.getInt16(10, true);
+  let cal_az = az / accel_precision;
+  handle_device_notification(timestamp, cal_force, cal_ax, cal_ay, cal_az);
+
+  /** 
+  let gyro_precision = 64;
+  let gx = view.getInt16(12, true);
+  let cal_gx = gx / gyro_precision;
+  let gy = view.getInt16(14, true);
+  let cal_gy = gy / gyro_precision;
+  let gz = view.getInt16(16, true);
+  let cal_gz = gz / gyro_precision;
+  let battery = view.getUint8(18, true);
+  */
 }
 
 function ui_state_set(state) {

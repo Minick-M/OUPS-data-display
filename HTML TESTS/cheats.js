@@ -3,6 +3,7 @@ const isLocalServer = window.location.href.startsWith("http://127.0.0.1");
 const isCheatEnabled = isLocalServer;
 
 var isPaused = false;
+var debugInt = null; 
 
 if(isCheatEnabled)
 {
@@ -54,8 +55,25 @@ function cheatInputEvent(key)
         case ' ':
             togglePause();
             return true;
-    }
 
+        case 'ArrowRight':
+            if (debugInt == null){
+                debugInt = 0; 
+            }
+            debugInt++;
+            return true;
+
+        case 'ArrowLeft':
+            if (debugInt == null){
+                debugInt = 0; 
+            }
+            debugInt--;
+            return true;
+
+        default : 
+        //console.log(key);
+    }
+    
     return false;
 }
 

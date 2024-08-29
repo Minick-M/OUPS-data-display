@@ -92,22 +92,25 @@ function drawScale(x, y, height, numScales, color, thickness){
 
 }
 // Draw gradient color rectangle
-function drawRectangles(x, y, width, height, color){
-    //Set shadow properties
+function drawRectangles(x, y, width, height, color, strokeColor){
+    /*Set shadow properties
     ctx.shadowColor = lighterGray;
     ctx.shadowBlur = 5;
     ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 0;
+    ctx.shadowOffsetY = 0; */
+    
+    ctx.beginPath();
+    ctx.lineWidth = 2; 
+    ctx.roundRect(x, y, width, height, [40]);
 
     ctx.fillStyle = color;
-    //ctx.strokeStyle = lightGray;
-    ctx.beginPath();
-    ctx.roundRect(x, y, width, height, [40]);
     ctx.fill();
-    //ctx.stroke();
+
+    ctx.strokeStyle = strokeColor;
+    ctx.stroke();
 
     // Reset shadow properties to avoid affecting other drawings
-    ctx.shadowColor = 'transparent';
+    //ctx.shadowColor = 'transparent';
 }
 function drawCurvedLines(x, y, nextX, nextY, color)
 {    
@@ -265,6 +268,11 @@ function hexToRgb(hex)
 
     return { r, g, b };
 }
+function colorToHex(color)
+{
+    const clampedColor = Math.max(0, Math.min(color, 255));
+    return clampedColor.toString(16).padStart(2, '0');
+}
 
 function rgbToHex(r, g, b) 
 {
@@ -273,6 +281,16 @@ function rgbToHex(r, g, b)
     b = b.toString(16).padStart(2, '0');
 
     return `#${r}${g}${b}`;
+}
+
+function rgbaToHex(r, g, b, a) 
+{
+    r = r.toString(16).padStart(2, '0');
+    g = g.toString(16).padStart(2, '0');
+    b = b.toString(16).padStart(2, '0');
+    a = a.toString(16).padStart(2, '0');
+
+    return `#${r}${g}${b}${a}`;
 }
 
 function lerpColor(color1, color2, t) 
@@ -365,10 +383,6 @@ function drawSparklingPetals(x, y, size, shape, rotation, fillColor, opacity)
     }
     ctx.fill(); 
     ctx.stroke();
-
-    //debugger;
-
-    ctx.globalAlpha = 1 // Reset the globalAlpha to 1 after drawing
     ctx.restore(); // Restore the canvas state
     
 }
@@ -537,4 +551,26 @@ function drawAnimatedPellet(x, y, width, height, ratio, apparitionTime, endX, en
     }
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-   
+/** WRITING FUNCTIONS */
+
+function wrapText(text, x, y, maxWidth, lineHeight) {
+    var words = text.split(' ');
+    var line = '';
+
+    for(var n = 0; n < words.length; n++) {
+      var testLine = line + words[n] + ' ';
+      var metrics = ctx.measureText(testLine);
+      var testWidth = metrics.width;
+
+      if (testWidth > maxWidth && n > 0) {
+        ctx.fillText(line, x, y);
+        line = words[n] + ' ';
+        y += lineHeight;
+      }
+      else {
+        line = testLine;
+      }
+    }
+    ctx.fillText(line, x, y);
+}
+

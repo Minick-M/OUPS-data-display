@@ -1,6 +1,7 @@
 
+
 // Duration and sequence control constants
-const sequenceDuration = 5000; // Duration of a single sequence
+const sequenceDuration = 10000; // Duration of a single sequence
 const numSequences = 6; // Total number of sequences in the game
 const numSeries = 3; 
 const sequenceGap = 300;  // Gap between sequences in milliseconds
@@ -31,10 +32,8 @@ for (let j = 0; j < numSeries; j ++)
         const timeEnd = timeStart + pauseDuration;
         singStarSequenceTimes.push({timeStart: timeStart, timeEnd: timeEnd, forceRatio: 0 , isPause: true});
         timeStart = timeEnd + sequenceGap; 
-    }
-    
+    } 
 }
-//console.log(singStarSequenceTimes);
 
 function getRectColor(index)
 {
@@ -68,7 +67,7 @@ function getTargetColor(index)
     }
 }
 
-function gameModeSingStarDraw(deltaMs)
+function modeForceDraw(deltaMs)
 {
     // Get current reading
     let currentForce = get_current_device_reading()[forceIndex];
@@ -223,16 +222,16 @@ function gameModeSingStarDraw(deltaMs)
         const rectDuration = singStarSequenceTimes[i].timeEnd - singStarSequenceTimes[i].timeStart;
         let rectWidth = ((rectDuration/gameplayTimeView)*gameplayWidth);
 
-        drawRectangles(rectX, rectY, rectWidth, rectHeight, color);
+        drawRectangles(rectX, rectY, rectWidth, rectHeight, color, color);
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        const durationCountDown = 2000; // 3 secondes
+        const durationCountDown = 3000; // 3 secondes
         const directiveStart = rectangleTime - durationCountDown;
         const directiveEnd = rectangleTime;
         const countDown = ~~(durationCountDown - (gameTime - directiveStart));
         let dirX = rectX + 10;
         let dirY = rectY - rectHeight/2;
-        let fontSize = String((forceTolerance + 2) * 8);
+        let fontSize = String((forceTolerance + 1.5) * 8);
         let fontFamily = 'sans serif';
         let strDirective = 'Contractez';
 
@@ -357,4 +356,12 @@ function gameModeSingStarDraw(deltaMs)
     } 
     */
     
+}
+
+class ModeForce{
+    constructor() {}
+
+    draw(deltaMs){
+        modeForceDraw(deltaMs);
+    }
 }
